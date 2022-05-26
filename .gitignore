@@ -3,3 +3,4 @@ tests/tmp/
 .vagrant/
 ssh-permit.json
 build/binaries/
+.direnv

@@ -19,8 +19,8 @@ fn userauth_agent(sess: &mut Session, ssh_user: &str) -> Result<bool, Box<Error>
     try!(agent.connect());
     agent.list_identities().unwrap();
 
-    for identity in agent.identities() {
-        let identity = try!(identity);
+    for identity in try!(agent.identities()) {
+        let identity = identity;
         if agent.userauth(&ssh_user, &identity).is_ok() {
             return Ok(true);
         }
@@ -106,15 +106,17 @@ pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: 
 
         // create ssh session
         let mut ssh_sess = match Session::new() {
-            Some(s) => s,
-            None => {
+            Ok(s) => s,
+            Err(e) => {
                 cli_flow::errorln("Unable to create SSH session.");
+                cli_flow::errorln(&e.to_string());
                 continue;
             }
         };
 
         // ssh handshake
-        match ssh_sess.handshake(&ssh_tcp) {
+        ssh_sess.set_tcp_stream(ssh_tcp);
+        match ssh_sess.handshake() {
             Ok(h) => h,
             Err(e) => {
                 cli_flow::errorln(&e.to_string());
