@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::env;
 use std::error::Error;
 use std::fs::File;
 use std::io::BufRead;
@@ -23,11 +22,11 @@ impl Default for SSHConfigHost {
     }
 }
 
-pub fn get() -> Result<HashMap<String, SSHConfigHost>, Box<Error>> {
+pub fn get() -> Result<HashMap<String, SSHConfigHost>, Box<dyn Error>> {
     let mut ssh_config = HashMap::new();
 
     // guess ~/.ssh/config path
-    let ssh_config_path = match env::home_dir() {
+    let ssh_config_path = match dirs::home_dir() {
         Some(path) => path.join(".ssh").join("config"),
         None => Path::new("").to_path_buf(),
     };

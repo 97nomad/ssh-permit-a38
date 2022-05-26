@@ -28,7 +28,7 @@ pub fn add(db: &mut Database, user_id: &str) {
     // add new user
     let mut user_new = vec![User {
         user_id: user_id.to_owned(),
-        public_key: public_key.trim_right().trim_left().to_owned(),
+        public_key: public_key.trim_start().trim_end().to_owned(),
     }];
 
     db.users.append(&mut user_new);

@@ -33,7 +33,7 @@ pub fn prompt_yes_no(msg: &str, colorful: bool) -> String {
             .ok()
             .expect("Couldn't read line (y/n)");
 
-        yes_no = yes_no.trim_right().trim_left().to_owned();
+        yes_no = yes_no.trim_start().trim_end().to_owned();
         if yes_no == "n" || yes_no == "y" {
             break;
         }
@@ -52,7 +52,7 @@ pub fn read_line<'a>(msg: &str, default: &'a String) -> String {
         .ok()
         .expect("Couldn't read_line");
 
-    input = input.trim_right().trim_left().to_string();
+    input = input.trim_start().trim_end().to_string();
     if !input.is_empty() {
         return input;
     }

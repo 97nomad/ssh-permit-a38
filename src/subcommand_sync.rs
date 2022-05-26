@@ -6,7 +6,6 @@ use rpassword;
 use ssh2::Session;
 use ssh_config;
 use std::collections::HashMap;
-use std::env;
 use std::error::Error;
 use std::io::prelude::*;
 use std::io::Read;
@@ -14,12 +13,12 @@ use std::net::TcpStream;
 use std::path::Path;
 use std::str;
 
-fn userauth_agent(sess: &mut Session, ssh_user: &str) -> Result<bool, Box<Error>> {
-    let mut agent = try!(sess.agent());
-    try!(agent.connect());
+fn userauth_agent(sess: &mut Session, ssh_user: &str) -> Result<bool, Box<dyn Error>> {
+    let mut agent = sess.agent()?;
+    agent.connect()?;
     agent.list_identities().unwrap();
 
-    for identity in try!(agent.identities()) {
+    for identity in agent.identities()? {
         let identity = identity;
         if agent.userauth(&ssh_user, &identity).is_ok() {
             return Ok(true);
@@ -173,12 +172,12 @@ pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: 
 
             if !agent_authed {
                 // guess ssh key location
-                let private_key_path = match env::home_dir() {
+                let private_key_path = match dirs::home_dir() {
                     Some(path) => path.join(".ssh").join("id_rsa"),
                     None => Path::new("").to_path_buf(),
                 };
 
-                let mut private_key_file_default = private_key_path.to_str().unwrap();
+                let private_key_file_default = private_key_path.to_str().unwrap();
                 let private_key_file = &cli_flow::read_line(
                     &format!("Private key ({}):", private_key_file_default),
                     &private_key_file_default.to_owned(),
@@ -214,7 +213,7 @@ pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: 
         let mut remote_authorized_keys_file_default = String::new();
 
         if let Ok(mut channel) = ssh_sess.channel_session() {
-            let mut r_get_home = channel.exec("echo $HOME");
+            let r_get_home = channel.exec("echo $HOME");
 
             if r_get_home.is_ok() {
                 let mut home = String::new();
@@ -223,9 +222,9 @@ pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: 
                 if r_read.is_ok() {
                     remote_authorized_keys_file_default = format!(
                         "{}/.ssh/authorized_keys",
-                        home.trim_right().trim_left().to_owned()
+                        home.trim_start().trim_end().to_owned()
                     );
-                    channel.wait_close().is_ok();
+                    channel.wait_close().unwrap();
                 }
             }
         };

@@ -32,7 +32,7 @@ impl Default for Database {
 }
 
 impl Database {
-    pub fn load<P: AsRef<Path>>(&self, path: P) -> Result<Database, Box<Error>> {
+    pub fn load<P: AsRef<Path>>(&self, path: P) -> Result<Database, Box<dyn Error>> {
         let file = File::open(path)?;
         Ok(serde_json::from_reader(file)?)
     }
