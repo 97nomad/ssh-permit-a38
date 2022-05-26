@@ -57,7 +57,7 @@ pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: 
         let mut ssh_host = &*host.hostname;
         let mut ssh_port = "22";
 
-        let mut ssh_user = String::new();
+        let mut ssh_user: Option<String> = None;
         let ssh_user_default = "root";
 
         let mut ssh_config_used = false;
@@ -74,7 +74,7 @@ pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: 
                     ));
 
                 ssh_host = &cfg_host.hostname;
-                ssh_user = cfg_host.user.to_owned();
+                ssh_user = Some(cfg_host.user.to_owned());
                 ssh_port = &cfg_host.port;
                 ssh_config_used = true;
 
@@ -82,9 +82,22 @@ pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: 
             }
         }
 
-        // hostname:port format?
+        // user@hostname:port format?
+        // TODO: replace with normal parser
         if !ssh_config_used {
-            let host_splitted: Vec<&str> = host.hostname.split(':').collect();
+            let host_without_user = {
+                let splitted: Vec<&str> = host.hostname.split('@').collect();
+
+                // found one @ in hostname
+                if splitted.len() == 2 {
+                    ssh_user = Some(splitted[0].to_string());
+                    splitted[1]
+                } else {
+                    &*host.hostname
+                }
+            };
+
+            let host_splitted: Vec<&str> = host_without_user.split(':').collect();
 
             // found one ':' in hostname
             if host_splitted.len() == 2 {
@@ -125,13 +138,13 @@ pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: 
         };
 
         // prompt for remote user
-        if !ssh_config_used {
-            ssh_user = cli_flow::read_line(
+        if ssh_user.is_none() {
+            ssh_user = Some(cli_flow::read_line(
                 &format!("SSH User ({}):", ssh_user_default),
                 &ssh_user_default.to_owned(),
-            ).to_owned();
+            ).to_owned());
         } else {
-            cli_flow::infoln(&format!("SSH User: {}", ssh_user));
+            cli_flow::infoln(&format!("SSH User: {}", &ssh_user.as_ref().unwrap()));
         }
 
         if password_auth {
@@ -139,7 +152,7 @@ pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: 
             cli_flow::prompt("Password:", false);
             let password = rpassword::prompt_password_stdout("").unwrap();
 
-            match ssh_sess.userauth_password(&ssh_user, &password) {
+            match ssh_sess.userauth_password(&ssh_user.unwrap(), &password) {
                 Ok(t) => {
                     // drop ssh_password
                     drop(password);
@@ -153,7 +166,7 @@ pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: 
                 }
             };
         } else {
-            let agent_authed = match userauth_agent(&mut ssh_sess, &ssh_user) {
+            let agent_authed = match userauth_agent(&mut ssh_sess, &ssh_user.as_ref().unwrap()) {
                 Ok(true) => true,
                 Ok(false) | Err(_) => false,
             };
@@ -177,7 +190,7 @@ pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: 
 
                 // public key auth
                 match ssh_sess.userauth_pubkey_file(
-                    &ssh_user,
+                    &ssh_user.unwrap(),
                     None,
                     Path::new(&private_key_file),
                     Some(&private_key_pass),

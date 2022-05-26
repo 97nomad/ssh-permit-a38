@@ -9,6 +9,11 @@ pub fn add(db: &mut Database, hostname: &str) {
         ));
     }
 
+    // <= 1 char '@' allowed
+    if hostname.matches("@").count() > 1 {
+        cli_flow::errorln("Hostname format invalid. More than than one '@' found");
+    }
+
     // <= 1 char ':' allowed
     if hostname.matches(":").count() > 1 {
         cli_flow::errorln("Hostname format invalid. More than than one ':' found");
