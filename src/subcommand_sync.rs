@@ -150,7 +150,7 @@ pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: 
         if password_auth {
             // prompt for password
             cli_flow::prompt("Password:", false);
-            let password = rpassword::prompt_password_stdout("").unwrap();
+            let password = rpassword::prompt_password("").unwrap();
 
             match ssh_sess.userauth_password(&ssh_user.unwrap(), &password) {
                 Ok(t) => {
@@ -186,7 +186,7 @@ pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: 
 
                 // prompt for passphrase
                 cli_flow::prompt("Passphrase (empty for no passphrase):", false);
-                let private_key_pass = rpassword::prompt_password_stdout("").unwrap();
+                let private_key_pass = rpassword::prompt_password("").unwrap();
 
                 // public key auth
                 match ssh_sess.userauth_pubkey_file(
