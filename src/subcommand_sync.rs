@@ -90,6 +90,7 @@ pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: 
                 // found one @ in hostname
                 if splitted.len() == 2 {
                     ssh_user = Some(splitted[0].to_string());
+                    ssh_host = &*splitted[1];
                     splitted[1]
                 } else {
                     &*host.hostname
