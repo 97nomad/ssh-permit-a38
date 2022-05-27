@@ -28,7 +28,7 @@ fn userauth_agent(sess: &mut Session, ssh_user: &str) -> Result<bool, Box<dyn Er
     Ok(false)
 }
 
-pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: bool) {
+pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: bool, authorized_key_path_input: Option<&str>) {
     let ssh_config = match ssh_config::get() {
         Ok(c) => c,
         Err(e) => {
@@ -164,6 +164,22 @@ pub fn sync(db: &mut Database, password_auth: bool, yes_authorized_keys_prompt: 
                     continue;
                 }
             };
+        } else if let Some(authorized_key_path) = authorized_key_path_input {
+            // TODO: Add passphrase support
+            // TODO: Add file existence check
+            // public key auth
+            match ssh_sess.userauth_pubkey_file(
+                &ssh_user.unwrap(),
+                None,
+                Path::new(&authorized_key_path),
+                None,
+            ) {
+                Ok(t) => t,
+                Err(e) => {
+                    cli_flow::errorln(&e.to_string());
+                    continue;
+                }
+            }
         } else {
             let agent_authed = match userauth_agent(&mut ssh_sess, &ssh_user.as_ref().unwrap()) {
                 Ok(true) => true,

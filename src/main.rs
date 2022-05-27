@@ -201,6 +201,12 @@ fn main() {
                         .help("Automatic yes to authorized_keys location prompts")
                         .takes_value(false),
                 )
+                .arg(
+                    Arg::with_name("authorized_key_path")
+                        .long("authorized-key-path")
+                        .help("Path to aouthorized key")
+                        .takes_value(true)
+                )
         )
         // howto
         .subcommand(
@@ -297,6 +303,7 @@ fn main() {
             &mut db,
             matches.is_present("password"),
             matches.is_present("yes_authorized_keys_prompt"),
+            matches.value_of("authorized_key_path")
         );
     }
     // howto

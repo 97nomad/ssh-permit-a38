@@ -12,7 +12,6 @@ pkgs.mkShell {
     cmake
     zlib
     rust-analyzer
-    racer
   ];
 
   RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
